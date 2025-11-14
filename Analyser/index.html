@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness For You</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        /* Темы */
+        .theme-neon {
+            --primary-color: #00ffff;
+            --secondary-color: #ff00ff;
+            --bg-color: #0c0c0c;
+            --bg-gradient: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+            --card-bg: rgba(255,255,255,0.05);
+            --text-color: #ffffff;
+            --accent-color: #00ffff;
+        }
+
+        .theme-gray {
+            --primary-color: #666666;
+            --secondary-color: #999999;
+            --bg-color: #1a1a1a;
+            --bg-gradient: linear-gradient(135deg, #1a1a1a, #2d2d2d, #3a3a3a);
+            --card-bg: rgba(255,255,255,0.08);
+            --text-color: #e0e0e0;
+            --accent-color: #666666;
+        }
+
+        .theme-white {
+            --primary-color: #333333;
+            --secondary-color: #666666;
+            --bg-color: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #f5f5f5, #e0e0e0, #d5d5d5);
+            --card-bg: rgba(0,0,0,0.05);
+            --text-color: #333333;
+            --accent-color: #333333;
+        }
+
+        .theme-black {
+            --primary-color: #ffffff;
+            --secondary-color: #cccccc;
+            --bg-color: #000000;
+            --bg-gradient: linear-gradient(135deg, #000000, #1a1a1a, #2d2d2d);
+            --card-bg: rgba(255,255,255,0.1);
+            --text-color: #ffffff;
+            --accent-color: #ffffff;
+        }
+
+        .theme-bw {
+            --primary-color: #000000;
+            --secondary-color: #666666;
+            --bg-color: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #ffffff, #f0f0f0, #e0e0e0);
+            --card-bg: rgba(0,0,0,0.1);
+            --text-color: #000000;
+            --accent-color: #000000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            padding: 15px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .container { 
+            max-width: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 50px color-mix(in srgb, var(--primary-color) 20%, transparent);
+            transition: all 0.3s ease;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px color-mix(in srgb, var(--primary-color) 30%, transparent);
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 1.1em;
+        }
+
+        .menu-btn {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .menu-btn:hover {
+            background: var(--card-bg);
+            transform: scale(1.1);
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .mode-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--bg-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px color-mix(in srgb, var(--primary-color) 40%, transparent);
+        }
+
+        .mode-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .mode-btn.disabled::after {
+            content: '🔒';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.7em;
+            background: rgba(255,0,0,0.8);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .exercise-selector {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .exercise-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--text-color);
+            opacity: 0.7;
+            color: var(--text-color);
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .exercise-btn.active {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--bg-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px color-mix(in srgb, var(--primary-color) 40%, transparent);
+            opacity: 1;
+        }
+
+        .exercise-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .exercise-btn.disabled::after {
+            content: '🔒';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.7em;
+            background: rgba(255,0,0,0.8);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-interface {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 30px color-mix(in srgb, var(--primary-color) 30%, transparent);
+        }
+        
+        #video, #canvas, #uploadedVideo {
+            width: 100%;
+            display: block;
+            transform: scaleX(-1);
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            transform: scaleX(-1);
+        }
+
+        .start-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--primary-color);
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            text-align: center;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 20px var(--primary-color);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .file-upload {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .file-upload label {
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8em;
+            border: 1px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .file-upload label:hover {
+            background: var(--primary-color);
+            color: #000;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .main-counter {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, 
+                color-mix(in srgb, var(--primary-color) 10%, transparent),
+                color-mix(in srgb, var(--secondary-color) 10%, transparent));
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+        }
+        
+        .counter {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-shadow: 0 0 20px color-mix(in srgb, var(--primary-color) 30%, transparent);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        
+        .counter-label {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+            opacity: 0.7;
+        }
+        
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 5px;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feedback {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+            color: var(--secondary-color);
+            font-size: 1em;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            min-width: 150px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px color-mix(in srgb, var(--primary-color) 30%, transparent);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px color-mix(in srgb, var(--primary-color) 50%, transparent);
+        }
+        
+        .control-btn.secondary {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .control-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--card-bg);
+            color: var(--text-color);
+            opacity: 0.5;
+        }
+        
+        .instructions {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .debug-info {
+            background: color-mix(in srgb, var(--secondary-color) 10%, transparent);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.8em;
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+
+        /* Меню настроек */
+        .settings-menu {
+            position: fixed;
+            top: 0;
+            left: -350px;
+            width: 350px;
+            height: 100vh;
+            background: var(--bg-gradient);
+            backdrop-filter: blur(20px);
+            border-right: 2px solid var(--primary-color);
+            padding: 30px;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-menu.active {
+            left: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--primary-color);
+        }
+
+        .settings-header h2 {
+            color: var(--primary-color);
+            font-size: 1.5em;
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .theme-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            padding: 15px;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .theme-btn.active {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 15px color-mix(in srgb, var(--primary-color) 40%, transparent);
+        }
+
+        .volume-control {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .voice-preview {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid var(--primary-color);
+        }
+
+        .voice-preview-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .author-info {
+            text-align: center;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+            margin-top: 20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .coming-soon-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+        }
+
+        .coming-soon-content {
+            background: var(--bg-gradient);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 50px var(--primary-color);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .coming-soon-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .coming-soon-content p {
+            color: var(--text-color);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .close-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Анимации */
+        @keyframes glow {
+            0% { box-shadow: 0 0 20px color-mix(in srgb, var(--primary-color) 30%, transparent); }
+            50% { box-shadow: 0 0 30px color-mix(in srgb, var(--primary-color) 50%, transparent); }
+            100% { box-shadow: 0 0 20px color-mix(in srgb, var(--primary-color) 30%, transparent); }
+        }
+        
+        .pulse {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tip-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid var(--primary-color);
+            font-size: 0.9em;
+        }
+
+        .tip-card.warning {
+            border-left-color: #ff4444;
+            background: color-mix(in srgb, #ff4444 10%, transparent);
+        }
+
+        .tip-card.success {
+            border-left-color: #00ff00;
+            background: color-mix(in srgb, #00ff00 10%, transparent);
+        }
+    </style>
+</head>
+<body class="theme-neon">
+    <div class="container">
+        <div class="header">
+            <button class="menu-btn" onclick="toggleSettings()">☰</button>
+            <h1>Fitness For You</h1>
+            <div class="subtitle">Анализ техники в реальном времени</div>
+        </div>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('camera')">📷 Камера</button>
+            <button class="mode-btn disabled" onclick="showComingSoon()">🎥 Видеофайл</button>
+        </div>
+
+        <div class="exercise-selector">
+            <button class="exercise-btn active" onclick="setExercise('pushup')">💪 Отжимания</button>
+            <button class="exercise-btn" onclick="setExercise('squat')">🦵 Приседания</button>
+            <button class="exercise-btn disabled" onclick="showComingSoon()">⏱️ Планка</button>
+            <button class="exercise-btn disabled" onclick="showComingSoon()">🔺 Пресс</button>
+        </div>
+
+        <div class="video-interface">
+            <video id="video" playsinline></video>
+            <video id="uploadedVideo" class="hidden" playsinline></video>
+            <canvas id="canvas" class="output_canvas"></canvas>
+            
+            <div class="start-message" id="startMessage">
+                🚀 Можете начинать!<br>
+                <small>Камера будет считать повторения</small>
+            </div>
+            
+            <div class="file-upload" id="fileUploadContainer">
+                <input type="file" id="videoFile" accept="video/*">
+                <label for="videoFile">📁 Выбрать видео</label>
+            </div>
+        </div>
+
+        <div id="debugInfo" class="debug-info">
+            Статус: Ожидание запуска...
+        </div>
+
+        <!-- Блок с подсказками -->
+        <div id="tipsContainer">
+            <div class="tip-card" id="generalTip">
+                <strong>💡 Совет:</strong> Держите спину прямо во время выполнения упражнений
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="main-counter">
+                <div class="counter" id="counter">0</div>
+                <div class="counter-label" id="exercise-name">отжиманий</div>
+            </div>
+            
+            <div class="stat-card">
+                <div>Угол</div>
+                <div class="stat-value" id="angle">0°</div>
+            </div>
+            <div class="stat-card">
+                <div>Состояние</div>
+                <div class="stat-value" id="state">-</div>
+            </div>
+            <div class="stat-card">
+                <div>Таймер</div>
+                <div class="stat-value" id="timer">0с</div>
+            </div>
+            <div class="stat-card">
+                <div>Качество</div>
+                <div class="stat-value" id="quality">-</div>
+            </div>
+        </div>
+
+        <div class="feedback" id="feedback">
+            Нажмите "Старт анализа" для начала работы
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="startAnalysis()">🚀 Старт анализа</button>
+            <button class="control-btn secondary" onclick="resetCounter()">🔄 Сброс</button>
+            <button class="control-btn secondary" onclick="stopAnalysis()">⏹️ Стоп</button>
+        </div>
+
+        <div class="instructions" id="instructions">
+            <strong>Отжимания:</strong> Следите за углом локтя ~90° в нижней позиции для идеальной техники
+        </div>
+    </div>
+
+    <!-- Меню настроек -->
+    <div class="overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+    <div class="settings-menu" id="settingsMenu">
+        <div class="settings-header">
+            <h2>⚙️ Настройки</h2>
+            <button class="close-settings" onclick="toggleSettings()">✕</button>
+        </div>
+
+        <div class="settings-section">
+            <h3>🎨 Тема оформления</h3>
+            <div class="theme-selector">
+                <button class="theme-btn active" onclick="setTheme('neon')" data-theme="neon">Неон</button>
+                <button class="theme-btn" onclick="setTheme('gray')" data-theme="gray">Серая</button>
+                <button class="theme-btn" onclick="setTheme('white')" data-theme="white">Белая</button>
+                <button class="theme-btn" onclick="setTheme('black')" data-theme="black">Черная</button>
+                <button class="theme-btn" onclick="setTheme('bw')" data-theme="bw">Чёрно-белая</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>🔊 Озвучка</h3>
+            <label>Громкость голоса:</label>
+            <input type="range" class="volume-control" id="volumeControl" min="0" max="1" step="0.1" value="0.7">
+            
+            <div class="voice-preview">
+                <p>Тест голоса:</p>
+                <button class="voice-preview-btn" onclick="testVoice()">🎵 Протестировать голос</button>
+            </div>
+        </div>
+
+        <div class="author-info">
+            <h3>👨‍💻 Об авторе</h3>
+            <p><strong>Создал ученик 10Б класса школы №1</strong></p>
+            <p>Этот проект разработан для помощи в тренировках и анализа техники выполнения упражнений.</p>
+        </div>
+    </div>
+
+    <div id="comingSoonOverlay" class="coming-soon-overlay">
+        <div class="coming-soon-content fade-in">
+            <h2>🚧 Скоро добавим!</h2>
+            <p>Эта функция находится в разработке и будет доступна в ближайшем обновлении.</p>
+            <p>Следите за обновлениями!</p>
+            <button class="close-btn" onclick="closeComingSoon()">Понятно</button>
+        </div>
+    </div>
+
+    <script>
+        let repCount = 0;
+        let isDown = false;
+        let currentExercise = 'pushup';
+        let currentMode = 'camera';
+        let pose = null;
+        let camera = null;
+        let startTime = 0;
+        let timerInterval = null;
+        let isAnalyzing = false;
+        let videoAnalysisInterval = null;
+        let lastVoiceTime = 0;
+        let voiceVolume = 0.7;
+
+        const video = document.getElementById('video');
+        const uploadedVideo = document.getElementById('uploadedVideo');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const counter = document.getElementById('counter');
+        const feedback = document.getElementById('feedback');
+        const angleElement = document.getElementById('angle');
+        const stateElement = document.getElementById('state');
+        const qualityElement = document.getElementById('quality');
+        const timerElement = document.getElementById('timer');
+        const exerciseName = document.getElementById('exercise-name');
+        const instructions = document.getElementById('instructions');
+        const videoFileInput = document.getElementById('videoFile');
+        const fileUploadContainer = document.getElementById('fileUploadContainer');
+        const debugInfo = document.getElementById('debugInfo');
+        const startMessage = document.getElementById('startMessage');
+        const comingSoonOverlay = document.getElementById('comingSoonOverlay');
+        const settingsMenu = document.getElementById('settingsMenu');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const volumeControl = document.getElementById('volumeControl');
+        const tipsContainer = document.getElementById('tipsContainer');
+
+        // Упражнения и их настройки с советами
+        const exercises = {
+            pushup: {
+                name: 'отжиманий',
+                downAngle: 80,
+                upAngle: 160,
+                instruction: '💪 Отжимания: Следите за углом локтя ~90° в нижней позиции для идеальной техники',
+                tips: {
+                    lowAngle: "Слишком низко! Локти должны быть под углом 90 градусов",
+                    highAngle: "Не до конца выпрямили руки! Полностью выпрямляйте локти",
+                    bodyAlignment: "Держите тело прямо! Таз не поднимайте",
+                    perfect: "Идеальная техника! Так держать!"
+                }
+            },
+            squat: {
+                name: 'приседаний', 
+                downAngle: 100,
+                upAngle: 170,
+                instruction: '🦵 Приседания: Следите за углом в коленях ~90° в нижней позиции, спина прямая',
+                tips: {
+                    lowAngle: "Слишком глубоко! Бедра должны быть параллельны полу",
+                    highAngle: "Недостаточно глубоко! Опускайтесь до параллели",
+                    bodyAlignment: "Спина прямая! Не наклоняйтесь вперед",
+                    perfect: "Отличная техника приседания!"
+                }
+            },
+            plank: {
+                name: 'планки',
+                downAngle: 160,
+                upAngle: 180,
+                instruction: '⏱️ Планка: Держите тело абсолютно прямо, таз не поднимайте и не опускайте'
+            },
+            situp: {
+                name: 'подъемов пресса',
+                downAngle: 60,
+                upAngle: 120,
+                instruction: '🔺 Пресс: Поднимайтесь до угла ~45° в тазобедренном суставе, не дергайтесь'
+            }
+        };
+
+        // Функции озвучки
+        function speak(text, urgency = 'normal') {
+            if (!('speechSynthesis' in window)) return;
+            
+            const now = Date.now();
+            if (now - lastVoiceTime < 2000) return; // Защита от спама
+            
+            lastVoiceTime = now;
+            
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.volume = voiceVolume;
+            utterance.rate = urgency === 'important' ? 0.9 : 1.0;
+            utterance.pitch = 1.0;
+            
+            const voices = speechSynthesis.getVoices();
+            const russianVoices = voices.filter(voice => voice.lang.includes('ru'));
+            
+            if (russianVoices.length > 0) {
+                utterance.voice = russianVoices[0];
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        function testVoice() {
+            speak("Привет! Это тестовое сообщение. Голос работает отлично!");
+        }
+
+        function giveFeedback(angle, exercise, isDown) {
+            const exerciseData = exercises[exercise];
+            if (!exerciseData.tips) return;
+
+            let feedbackText = "";
+            
+            if (exercise === 'pushup') {
+                if (angle < 70) {
+                    feedbackText = exerciseData.tips.lowAngle;
+                } else if (angle > 150 && !isDown) {
+                    feedbackText = exerciseData.tips.highAngle;
+                } else if (angle > 100 && angle < 130 && isDown) {
+                    feedbackText = exerciseData.tips.perfect;
+                }
+            } else if (exercise === 'squat') {
+                if (angle < 90) {
+                    feedbackText = exerciseData.tips.lowAngle;
+                } else if (angle > 150 && !isDown) {
+                    feedbackText = exerciseData.tips.highAngle;
+                } else if (angle > 110 && angle < 130 && isDown) {
+                    feedbackText = exerciseData.tips.perfect;
+                }
+            }
+
+            if (feedbackText) {
+                speak(feedbackText, 'important');
+                showTip(feedbackText, feedbackText.includes('Идеальная') || feedbackText.includes('Отличная') ? 'success' : 'warning');
+            }
+        }
+
+        function showTip(text, type = 'normal') {
+            const tipCard = document.createElement('div');
+            tipCard.className = `tip-card ${type === 'warning' ? 'warning' : type === 'success' ? 'success' : ''}`;
+            tipCard.innerHTML = `<strong>💡 Совет:</strong> ${text}`;
+            
+            tipsContainer.innerHTML = '';
+            tipsContainer.appendChild(tipCard);
+            
+            setTimeout(() => {
+                tipCard.style.opacity = '0';
+                tipCard.style.transition = 'opacity 0.5s';
+                setTimeout(() => tipCard.remove(), 500);
+            }, 5000);
+        }
+
+        // Функции тем
+        function setTheme(themeName) {
+            document.body.className = `theme-${themeName}`;
+            
+            // Обновляем активную кнопку темы
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-theme') === themeName) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('selectedTheme', themeName);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('selectedTheme') || 'neon';
+            setTheme(savedTheme);
+        }
+
+        // Функции меню
+        function toggleSettings() {
+            settingsMenu.classList.toggle('active');
+            settingsOverlay.classList.toggle('active');
+        }
+
+        function showComingSoon() {
+            comingSoonOverlay.style.display = 'flex';
+        }
+
+        function closeComingSoon() {
+            comingSoonOverlay.style.display = 'none';
+        }
+
+        function setMode(mode) {
+            if (mode === 'video') {
+                showComingSoon();
+                return;
+            }
+            
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (mode === 'camera') {
+                video.classList.remove('hidden');
+                uploadedVideo.classList.add('hidden');
+                fileUploadContainer.style.display = 'none';
+                feedback.textContent = "Режим камеры: нажмите Старт для начала анализа";
+                debugInfo.textContent = "Режим: Камера";
+            }
+            
+            resetCounter();
+        }
+
+        function setExercise(exercise) {
+            if (exercise === 'plank' || exercise === 'situp') {
+                showComingSoon();
+                return;
+            }
+            
+            currentExercise = exercise;
+            
+            document.querySelectorAll('.exercise-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            exerciseName.textContent = exercises[exercise].name;
+            instructions.textContent = exercises[exercise].instruction;
+            
+            // При смене упражнения сбрасываем счетчик и показываем сообщение
+            resetCounter();
+            if (isAnalyzing) {
+                startMessage.style.display = 'block';
+                setTimeout(() => {
+                    startMessage.style.display = 'none';
+                }, 3000);
+            }
+            
+            updateExerciseState();
+        }
+
+        function updateExerciseState() {
+            isDown = false;
+            stateElement.textContent = "-";
+            qualityElement.textContent = "-";
+            stateElement.style.color = "var(--primary-color)";
+            qualityElement.style.color = "var(--primary-color)";
+            
+            if (currentExercise === 'plank') {
+                feedback.textContent = "Готов к планке! Держите тело прямо";
+            } else {
+                feedback.textContent = `Готов к ${exercises[currentExercise].name}`;
+            }
+        }
+
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs(radians * 180 / Math.PI);
+            return angle > 180 ? 360 - angle : angle;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const seconds = Math.floor((Date.now() - startTime) / 1000);
+                timerElement.textContent = seconds + 'с';
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function onResults(results) {
+            if (!results.poseLandmarks || !isAnalyzing) {
+                return;
+            }
+
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем изображение (уже зеркальное из-за CSS)
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            
+            // СКЕЛЕТ СКРЫТ - убрали отрисовку скелета
+            
+            ctx.restore();
+
+            const landmarks = results.poseLandmarks;
+            const exercise = exercises[currentExercise];
+            
+            // Анализируем позу
+            let angle = 0;
+            
+            if (currentExercise === 'pushup' || currentExercise === 'plank') {
+                const shoulder = landmarks[11];
+                const elbow = landmarks[13];
+                const wrist = landmarks[15];
+                angle = calculateAngle(shoulder, elbow, wrist);
+                
+            } else if (currentExercise === 'squat') {
+                const hip = landmarks[23];
+                const knee = landmarks[25];
+                const ankle = landmarks[27];
+                angle = calculateAngle(hip, knee, ankle);
+                
+            } else if (currentExercise === 'situp') {
+                const shoulder = landmarks[11];
+                const hip = landmarks[23];
+                const knee = landmarks[25];
+                angle = calculateAngle(shoulder, hip, knee);
+            }
+
+            angleElement.textContent = Math.round(angle) + '°';
+            debugInfo.textContent = `Обнаружена поза. Угол: ${Math.round(angle)}°`;
+
+            // Логика подсчета
+            if (currentExercise === 'plank') {
+                stateElement.textContent = "ДЕРЖИМ";
+                stateElement.style.color = "var(--primary-color)";
+                qualityElement.textContent = "✅ ИДЕАЛЬНО";
+                
+            } else {
+                if (angle < exercise.downAngle && !isDown) {
+                    isDown = true;
+                    stateElement.textContent = "НИЗ";
+                    stateElement.style.color = "var(--secondary-color)";
+                    debugInfo.textContent = `НИЗ: угол ${Math.round(angle)}°`;
+                    giveFeedback(angle, currentExercise, true);
+                } else if (angle > exercise.upAngle && isDown) {
+                    repCount++;
+                    isDown = false;
+                    counter.textContent = repCount;
+                    stateElement.textContent = "ВЕРХ";
+                    stateElement.style.color = "var(--primary-color)";
+                    feedback.textContent = `🎉 ${exercise.name.charAt(0).toUpperCase() + exercise.name.slice(1)} #${repCount}!`;
+                    debugInfo.textContent = `Отжимание #${repCount}! Угол: ${Math.round(angle)}°`;
+                    speak(`Повторение ${repCount}`);
+                    giveFeedback(angle, currentExercise, false);
+                    
+                    counter.classList.add('pulse');
+                    setTimeout(() => counter.classList.remove('pulse'), 1000);
+                }
+
+                if (angle > exercise.upAngle - 10 && !isDown) {
+                    qualityElement.textContent = "✅ ИДЕАЛЬНО";
+                    qualityElement.style.color = "var(--primary-color)";
+                } else if (angle < exercise.downAngle + 20 && isDown) {
+                    qualityElement.textContent = "⚠️ ГЛУБОКО";
+                    qualityElement.style.color = "var(--secondary-color)";
+                }
+            }
+        }
+
+        async function startCameraAnalysis() {
+            try {
+                feedback.textContent = "🔄 Запуск камеры...";
+                debugInfo.textContent = "Инициализация камеры...";
+                startMessage.style.display = 'block';
+                
+                // Останавливаем предыдущую камеру если была
+                if (camera) {
+                    await camera.stop();
+                }
+
+                pose = new Pose({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+                    }
+                });
+
+                pose.setOptions({
+                    modelComplexity: 1,
+                    smoothLandmarks: true,
+                    enableSegmentation: false,
+                    smoothSegmentation: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                pose.onResults(onResults);
+
+                // Запускаем камеру с фронтальным видом
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        if (isAnalyzing && pose) {
+                            try {
+                                await pose.send({image: video});
+                            } catch (error) {
+                                console.error('Ошибка анализа кадра:', error);
+                            }
+                        }
+                    },
+                    width: 640,
+                    height: 480
+                });
+
+                await camera.start();
+                
+                // Устанавливаем размеры canvas
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                isAnalyzing = true;
+                
+                // Скрываем сообщение через 3 секунды
+                setTimeout(() => {
+                    startMessage.style.display = 'none';
+                    feedback.textContent = "📹 Камера активна! Начинайте упражнение";
+                    speak("Камера активна! Начинайте упражнение");
+                }, 3000);
+                
+                debugInfo.textContent = `Камера запущена: ${video.videoWidth}x${video.videoHeight}`;
+                startTimer();
+
+            } catch (error) {
+                console.error('Ошибка запуска камеры:', error);
+                feedback.textContent = "❌ Ошибка доступа к камере";
+                debugInfo.textContent = "Ошибка: " + error.message;
+                startMessage.style.display = 'none';
+            }
+        }
+
+        function startAnalysis() {
+            if (currentMode === 'camera') {
+                startCameraAnalysis();
+            }
+        }
+
+        function stopAnalysis() {
+            isAnalyzing = false;
+            stopTimer();
+            startMessage.style.display = 'none';
+            
+            if (camera) {
+                camera.stop();
+            }
+            
+            if (uploadedVideo) {
+                uploadedVideo.pause();
+            }
+            
+            feedback.textContent = "Анализ остановлен";
+            debugInfo.textContent = "Анализ приостановлен";
+            speak("Анализ остановлен");
+        }
+
+        function resetCounter() {
+            repCount = 0;
+            counter.textContent = "0";
+            feedback.textContent = "Счетчик сброшен! Нажмите Старт для начала";
+            isDown = false;
+            stateElement.textContent = "-";
+            qualityElement.textContent = "-";
+            stateElement.style.color = "var(--primary-color)";
+            qualityElement.style.color = "var(--primary-color)";
+            stopTimer();
+            timerElement.textContent = "0с";
+            isAnalyzing = false;
+            startMessage.style.display = 'none';
+            debugInfo.textContent = "Сброс выполнен. Готов к новому подходу.";
+            speak("Счетчик сброшен");
+        }
+
+        // Инициализация при загрузке
+        function initializeApp() {
+            loadTheme();
+            
+            // Настройка громкости
+            volumeControl.addEventListener('input', function() {
+                voiceVolume = parseFloat(this.value);
+            });
+
+            debugInfo.textContent = "Система готова. Выберите режим и нажмите Старт.";
+        }
+
+        // Автозапуск
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
